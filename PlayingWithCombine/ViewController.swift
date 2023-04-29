@@ -28,16 +28,12 @@ protocol AsyncRunLoopBindable {
 @MainActor
 final class ViewModel {
   @Published private(set) var isBusy = false
-  @Published private(set) var title = ""
-  private(set) var count = 0 {
-    didSet { title = "count: \(count)" }
-  }
+  @Published private(set) var count = 0 { didSet { print(count) } }
   
   func incrementAsync() async {
     isBusy = true
     defer { isBusy = false }
     try? await Task.sleep(nanoseconds: 2_000_000_000)
-    print("incrementAsync")
     count += 1
   }
 
@@ -71,6 +67,12 @@ final class ViewController: UIViewController {
     label.translatesAutoresizingMaskIntoConstraints = false
     view.addSubview(label)
 
+    let asyncButton = UIButton()
+    asyncButton.setTitleColor(.black, for: .normal)
+    asyncButton.setTitle("Increment Async", for: .normal)
+    asyncButton.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(asyncButton)
+
     let button = UIButton()
     button.setTitleColor(.black, for: .normal)
     button.setTitle("Increment", for: .normal)
@@ -94,6 +96,8 @@ final class ViewController: UIViewController {
     NSLayoutConstraint.activate([
       label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
       label.centerYAnchor.constraint(equalTo: view.topAnchor, constant: 100),
+      asyncButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+      asyncButton.centerYAnchor.constraint(equalTo: view.bottomAnchor, constant: -400),
       button.centerXAnchor.constraint(equalTo: view.centerXAnchor),
       button.centerYAnchor.constraint(equalTo: view.centerYAnchor),
       presentButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -102,13 +106,14 @@ final class ViewController: UIViewController {
       spinner.centerYAnchor.constraint(equalTo: view.topAnchor, constant: 300),
     ])
 
-    viewModel.$title
-      .map { $0 }
+    viewModel.$count
+      .map { "Count: \($0)" }
       .assign(to: \.text, on: label)
       .store(in: &subscriptions)
     
 
-    button.bind(to: runLoop, action: viewModel.incrementAsync)
+    asyncButton.bind(to: runLoop, action: viewModel.incrementAsync)
+    button.bind(to: runLoop) { [viewModel] in viewModel.increment() }
 
     presentButton.bind(to: runLoop) { [weak self] in
       guard let self else { return }
