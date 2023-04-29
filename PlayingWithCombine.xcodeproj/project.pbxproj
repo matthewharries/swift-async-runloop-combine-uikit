@@ -15,6 +15,7 @@
 		0A58E01F29FD748A00A83ABA /* PlayingWithCombineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A58E01E29FD748A00A83ABA /* PlayingWithCombineTests.swift */; };
 		0A58E02929FD748A00A83ABA /* PlayingWithCombineUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A58E02829FD748A00A83ABA /* PlayingWithCombineUITests.swift */; };
 		0A58E02B29FD748A00A83ABA /* PlayingWithCombineUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A58E02A29FD748A00A83ABA /* PlayingWithCombineUITestsLaunchTests.swift */; };
+		0A58E03929FDB10800A83ABA /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 0A58E03829FDB10800A83ABA /* AsyncAlgorithms */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -54,6 +55,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0A58E03929FDB10800A83ABA /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -140,6 +142,9 @@
 			dependencies = (
 			);
 			name = PlayingWithCombine;
+			packageProductDependencies = (
+				0A58E03829FDB10800A83ABA /* AsyncAlgorithms */,
+			);
 			productName = PlayingWithCombine;
 			productReference = 0A58E00429FD748900A83ABA /* PlayingWithCombine.app */;
 			productType = "com.apple.product-type.application";
@@ -212,6 +217,9 @@
 				Base,
 			);
 			mainGroup = 0A58DFFB29FD748900A83ABA;
+			packageReferences = (
+				0A58E03729FDB10800A83ABA /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
+			);
 			productRefGroup = 0A58E00529FD748900A83ABA /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -588,6 +596,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0A58E03729FDB10800A83ABA /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-async-algorithms";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0A58E03829FDB10800A83ABA /* AsyncAlgorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0A58E03729FDB10800A83ABA /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
+			productName = AsyncAlgorithms;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 0A58DFFC29FD748900A83ABA /* Project object */;
 }

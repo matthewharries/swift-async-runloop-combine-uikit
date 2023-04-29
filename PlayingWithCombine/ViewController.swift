@@ -3,44 +3,47 @@ import Combine
 
 @MainActor
 final class AsyncRunLoop {
-  let taskSubject = CurrentValueSubject<Task<Void, Never>, Never>(Task {})
-  var task: Task<Void, Never>? = nil
+  typealias Action = () async -> Void
+    
+  private var subject: AsyncStream<Action>.Continuation!
+  private var task: Task<Void, Never>? = nil
   
   init() {
-    print("loop init")
-    task = Task {
-      for await task in taskSubject.values { await task.value }
-    }
+    print("runloop init")
+    let stream = AsyncStream { self.subject = $0 }
+    task = Task { for await action in stream { await action() } }
   }
   
-  deinit { print("loop deinit") }
+  deinit { print("runloop deinit") }
   
-  func send(_ input: Task<Void, Never>) { taskSubject.send(input) }
-  
+  func send(_ action: @escaping Action) { subject.yield(action) }
   func cancel() { task?.cancel() }
 }
 
 @MainActor
 protocol AsyncRunLoopBindable {
-  func bind(to runLoop: AsyncRunLoop, action: @escaping () async -> Void)
+  func bind(to runLoop: AsyncRunLoop, action: @escaping AsyncRunLoop.Action)
 }
 
 @MainActor
 final class ViewModel {
+  @Published private(set) var isBusy = false
   @Published private(set) var title = ""
   private(set) var count = 0 {
     didSet { title = "count: \(count)" }
   }
   
   func incrementAsync() async {
+    isBusy = true
+    defer { isBusy = false }
     try? await Task.sleep(nanoseconds: 2_000_000_000)
+    print("incrementAsync")
     count += 1
   }
 
   func increment(by count: Int = 1) {
     self.count += count
   }
-
 }
 
 @MainActor
@@ -53,13 +56,12 @@ final class ViewController: UIViewController {
   let completion: ((Int) -> Void)?
   
   init(completion: @escaping (Int) -> Void) {
+    print("viewcontroller init")
     self.completion = completion
     super.init(nibName: nil, bundle: nil)
   }
   
-  required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
+  required init?(coder: NSCoder) { fatalError() }
   
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -80,7 +82,15 @@ final class ViewController: UIViewController {
     presentButton.setTitle("Present new", for: .normal)
     presentButton.translatesAutoresizingMaskIntoConstraints = false
     view.addSubview(presentButton)
-
+    
+    let spinner = UIActivityIndicatorView()
+    spinner.translatesAutoresizingMaskIntoConstraints = false
+    spinner.hidesWhenStopped = true
+    view.addSubview(spinner)
+    viewModel.$isBusy
+      .sink { $0 ? spinner.startAnimating() : spinner.stopAnimating() }
+      .store(in: &subscriptions)
+    
     NSLayoutConstraint.activate([
       label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
       label.centerYAnchor.constraint(equalTo: view.topAnchor, constant: 100),
@@ -88,6 +98,8 @@ final class ViewController: UIViewController {
       button.centerYAnchor.constraint(equalTo: view.centerYAnchor),
       presentButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
       presentButton.centerYAnchor.constraint(equalTo: view.bottomAnchor, constant: -300),
+      spinner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+      spinner.centerYAnchor.constraint(equalTo: view.topAnchor, constant: 300),
     ])
 
     viewModel.$title
@@ -108,12 +120,12 @@ final class ViewController: UIViewController {
   override func viewDidDisappear(_ animated: Bool) {
     super.viewDidDisappear(animated)
     completion?(viewModel.count)
+    runLoop.cancel()
   }
   
   deinit {
+    print("viewcontroller deinit")
     subscriptions.forEach { $0.cancel() }
-    Task { [runLoop] in await runLoop.cancel() }
-    print("view controller deinit")
   }
 }
 
@@ -134,7 +146,7 @@ extension ViewController {
 extension UIButton: AsyncRunLoopBindable {
   func bind(to runLoop: AsyncRunLoop, action: @escaping () async -> Void) {
     addAction(UIAction(handler: { _ in
-      runLoop.send(Task<Void, Never> { await action() })
+      runLoop.send(action)
     }), for: .touchUpInside)
   }
 }
