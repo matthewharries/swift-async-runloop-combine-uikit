@@ -21,6 +21,11 @@ final class AsyncRunLoop {
 }
 
 @MainActor
+protocol AsyncRunLoopBindable {
+  func bind(to runLoop: AsyncRunLoop, action: @escaping () async -> Void)
+}
+
+@MainActor
 final class ViewModel {
   @Published private(set) var title = ""
   private(set) var count = 0 {
@@ -99,9 +104,9 @@ final class ViewController: UIViewController {
       self.viewModel.increment(by: newCount)
     }
   }
-  
-  override func viewWillDisappear(_ animated: Bool) {
-    super.viewWillDisappear(animated)
+    
+  override func viewDidDisappear(_ animated: Bool) {
+    super.viewDidDisappear(animated)
     completion?(viewModel.count)
   }
   
@@ -125,9 +130,8 @@ extension ViewController {
   }
 
 }
-    
-    
-extension UIButton {
+
+extension UIButton: AsyncRunLoopBindable {
   func bind(to runLoop: AsyncRunLoop, action: @escaping () async -> Void) {
     addAction(UIAction(handler: { _ in
       runLoop.send(Task<Void, Never> { await action() })
